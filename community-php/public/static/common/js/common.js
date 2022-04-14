@@ -1,1 +1,0 @@
-const hostUrl = document.location.protocol + '//' + document.domain
