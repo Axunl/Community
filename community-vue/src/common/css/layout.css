@@ -1,0 +1,60 @@
+/* layout */
+div {
+  font-family: "PingFang SC";
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.circle {
+  margin-left: 2px;
+  padding: 3px;
+  width: 15px;
+  height: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #888888;
+  color: white;
+}
+
+.line {
+  border-top: 1px solid #f4f4f4;
+  padding: 10px 0;
+  border-bottom: 1px solid #f4f4f4;
+}
+
+.float-right {
+  float: right;
+}
+
+.float-left {
+  float: left;
+}
+
+.mgr10 {
+  margin-right: 10px;
+}
+
+.mgl10 {
+  margin-left: 10px;
+}
+
+.mgt10 {
+  margin-top: 10px;
+}
+
+.mgb10 {
+  margin-bottom: 10px;
+}
+
+.bc-white {
+  background: white;
+}
+
+.gray {
+  color: #999;
+}

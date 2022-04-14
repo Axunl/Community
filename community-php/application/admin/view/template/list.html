@@ -1,0 +1,190 @@
+{extend name="public/base" /}
+{block name="body"}
+{include file="public/list" /} <!--引入列表模板-->
+
+<!--脚本配置部分-->
+<script>
+    var getUrl = "{$getUrl}";
+    var searchUrl = "{$searchUrl}";
+    var editUrl = '{$editUrl}';
+    var addUrl = "{$addUrl}";
+    var doEditUrl = "{$doEditUrl}";
+    var deleteUrl = "{$deleteUrl}";
+    //定义全局路径
+    window.URL = {
+        getData: getUrl,
+        searchData: searchUrl,
+        editData: editUrl,
+        addData: addUrl,
+        doEditData: doEditUrl,
+        deleteData: deleteUrl
+    };
+    var cols = '{$cols|raw}';
+    cols = JSON.parse(cols);
+    window.TABLE = {cols: cols};
+    window.TABLE_ID = '{$id}';  //表的id
+</script>
+
+<!--注 工具栏按钮监听在此脚本，表里的按钮监听在框架模块里的template-->
+<script>
+    layui.config({
+        base: '/static/frame/layui-admin/' //静态资源所在路径
+    }).extend({
+        index: 'lib/index', //主入口模块
+        version: "{$time}"
+    }).use(['index', 'template', 'laydate', 'table', 'admin'], function () {
+        const $ = layui.$
+            , form = layui.form
+            , table = layui.table
+            , admin = layui.admin
+            , laydate = layui.laydate;
+
+        //时间选择器
+        $(".timeItem").each(function () {
+            //日期时间选择器
+            laydate.render({
+                elem: '#' + $(this).attr("id")
+                , type: 'date'
+            });
+        });
+
+        //监听搜索
+        form.on('submit(LAY-search)', function (data) {
+            let field = data.field;
+            //执行重载
+            table.reload('LAY-table-manage', {
+                url: URL.searchData,
+                method: 'post',
+                where: field,
+            });
+        });
+
+        //查看图片
+        admin.events.Preview = function (othis) {
+            var src = othis.attr("lay-data");
+            layer.photos({
+                photos: {
+                    "title": "查看图片" //相册标题
+                    , "data": [{
+                        "src": src //原图地址
+                    }]
+                }
+                , shade: 0.01
+                , closeBtn: 1
+                , anim: 5
+            });
+        };
+
+        //头工具栏事件
+        table.on('toolbar(LAY-table-manage)', function (obj) {
+            var checkStatus = table.checkStatus(obj.config.id);
+            switch (obj.event) {
+                case 'delete':
+                    //询问框
+                    var data = checkStatus.data;
+                    if (data.length == 0) {
+                        layer.msg('没有选择任何项。');
+                        return;
+                    }
+                    var id = "";
+                    for (var i in data) {
+                        id += data[i][TABLE_ID];
+                        id += ",";
+                    }
+                    layer.confirm('确定删除吗？', {
+                        btn: ['确定', '取消'] //按钮
+                    }, function () {
+                        layer.closeAll();
+                        //传给后台进行删除
+                        $.ajax({
+                            type: "POST",//提交数据的类型 POST GET
+                            url: URL.deleteData + "/where/{$id}/data/" + id,//提交的网址
+                            dataType: "json",//"xml", "html", "script", "json", "jsonp", "text".//返回数据的格式
+                            success: function (data) {  //成功返回之后调用的函数
+                                if (data.code == 0) {
+                                    layer.msg(data.msg, {
+                                        time: 1000 //1s后自动关闭
+                                        , icon: 6
+                                    });
+                                    table.reload('LAY-table-manage'); //数据刷新
+                                    layer.close(index); //关闭弹层
+                                } else {
+                                    layer.msg(data.msg, {
+                                        time: 2000, //2s后自动关闭
+                                        icon: 5
+                                    });
+                                }
+                            },
+                            error: function () { //调用出错执行的函数
+                                layer.msg("服务器网络错误", {
+                                    time: 2000 //1s后自动关闭
+                                });
+                            }
+                        });
+                    }, function () {
+                        layer.closeAll();
+                    });
+                    break;
+                case 'add':
+                    //获取屏幕宽度，
+                    var width = parseFloat(document.body.clientWidth);//获取屏幕宽度
+                    width = width > 800 ? 800 : width;
+                    layer.open({
+                        type: 2
+                        , title: '添加'
+                        , content: URL.editData + "/id/" + id
+                        , maxmin: true
+                        , fixed: false
+                        , resize: true
+                        , offset: '20px'
+                        , area: [width + 'px', '800px']
+                        , btn: ['确定', '取消']
+                        , yes: function (index, layero) {
+                            var iframeWindow = window['layui-layer-iframe' + index]
+                                , submitID = 'LAY-submit'
+                                , submit = layero.find('iframe').contents().find('#' + submitID);
+                            //监听提交
+                            iframeWindow.layui.form.on('submit(' + submitID + ')', function (data) {
+                                var field = data.field; //获取提交的字段
+                                //提交 Ajax 成功后，静态更新表格中的数据
+                                $.ajax({
+                                    type: "POST",//提交数据的类型 POST GET
+                                    url: URL.addData,//提交的网址
+                                    data: field,//提交的数据
+                                    dataType: "json",//"xml", "html", "script", "json", "jsonp", "text".//返回数据的格式
+                                    success: function (data) { //成功返回之后调用的函数
+                                        if (data.code == 0) {
+                                            layer.msg(data.msg, {
+                                                time: 1000 //1s后自动关闭
+                                                , icon: 6
+                                            });
+                                            table.reload('LAY-table-manage');
+                                            layer.close(index); //关闭弹层
+                                            table.reload('LAY-table-manage');
+                                        } else {
+                                            layer.msg(data.msg, {
+                                                time: 2000, //2s后自动关闭
+                                                icon: 5
+                                            });
+                                        }
+                                    },
+                                    error: function () { //调用出错执行的函数
+                                        layer.msg("服务器网络错误", {
+                                            time: 2000 //1s后自动关闭
+                                        });
+                                    }
+                                });
+                            });
+                            submit.trigger('click');
+                        }
+                        , success: function (layero, index) {
+
+                        }
+                    });
+                    break;
+            }
+        });
+
+    });
+</script>
+{/block}

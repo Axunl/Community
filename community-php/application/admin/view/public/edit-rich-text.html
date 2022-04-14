@@ -1,0 +1,13 @@
+{volist name="data" id="vo"}
+{switch vo.type}
+{case richText}
+let {$vo.name} = layedit.build('{$vo.name}', {height: 800}); //建立编辑器
+layedit.setContent({$vo.name}, $("#{$vo.name}").text());//赋值文本编辑器
+form.verify({
+content: function (value) {
+return layedit.sync({$vo.name});
+}
+});
+{/case}
+{/switch}
+{/volist}
